@@ -13,6 +13,7 @@ import java.util.Map;
 public class Document {
 
     private String docID;
+    private int length;
     private Map<String,Integer> contentMap;
 
     public String getDocID() {
@@ -41,11 +42,13 @@ public class Document {
         this.contentMap = new HashMap<String,Integer>();
     }
 
-    public Document createDocument(String content,String id) throws Exception{
-        Document doc = new Document();
+    public void createDocument(String content,String id) throws Exception{
+
+        int length = 0;
         Map<String,Integer> docMap = new HashMap<String,Integer>();
         List<String> tokens = PreProcessing.tokenize(content);
         for(int i=0;i<tokens.size();i++){
+            length++;
             if(null==docMap.get(tokens.get(i))){
                 docMap.put(tokens.get(i),1);
             }else{
@@ -55,19 +58,21 @@ public class Document {
 
         }
         if(null!=id && ""!=id){
-            doc.setDocID(id);
+            this.setDocID(id);
         }
         else{
-            doc.setDocID(Integer.toString(content.hashCode()));
+            this.setDocID(Integer.toString(content.hashCode()));
         }
-        doc.setContentMap(docMap);
-        return doc;
+
+        this.length = length;
+        this.setContentMap(docMap);
+
 
     }
 
-    public int getDocWordCount(Document doc, String word){
-        if(null!=doc.getContentMap().get(word)){
-            return doc.getContentMap().get(word);
+    public int getDocWordCount(String word){
+        if(null!=this.getContentMap().get(word)){
+            return this.getContentMap().get(word);
         }else{
             return 0;
         }
@@ -76,7 +81,9 @@ public class Document {
 
     public static void main(String[] args) throws Exception{
         Document doc = new Document();
-        System.out.print(doc.createDocument("Alok Kumar Shukl is Okay Okay Alok","").getDocID());
+        doc.createDocument("Alok Kumar Shukl is Okay Okay Alok","");
+        System.out.print(doc.getContentMap());
+        System.out.print(doc.getDocID());
     }
 
 }
