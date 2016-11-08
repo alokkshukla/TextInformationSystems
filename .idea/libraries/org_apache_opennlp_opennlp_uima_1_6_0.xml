@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="org.apache.opennlp:opennlp-uima:1.6.0" type="repository">
+    <properties maven-id="org.apache.opennlp:opennlp-uima:1.6.0" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/opennlp-uima-1.6.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/opennlp-tools-1.6.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/lib/uimaj-core-2.3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
