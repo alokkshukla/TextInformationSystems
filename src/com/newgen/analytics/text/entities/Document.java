@@ -14,6 +14,34 @@ public class Document {
 
     private String docID;
     private int length;
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    private String label;
+
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
+    }
+
+    private String content;
     private Map<String,Integer> contentMap;
 
     public String getDocID() {
@@ -44,6 +72,7 @@ public class Document {
 
     public void createDocument(String content,String id) throws Exception{
 
+
         int length = 0;
         Map<String,Integer> docMap = new HashMap<String,Integer>();
         List<String> tokens = PreProcessing.tokenize(content);
@@ -65,6 +94,7 @@ public class Document {
         }
 
         this.length = length;
+        this.setContent(content);
         this.setContentMap(docMap);
 
 

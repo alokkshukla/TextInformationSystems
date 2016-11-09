@@ -9,11 +9,22 @@ import java.util.TreeMap;
  */
 public class InvertedIndex {
 
+    public Corpus getCorpus() {
+        return corpus;
+    }
+
+    public void setCorpus(Corpus c) {
+        this.corpus = c;
+    }
+
+    private Corpus corpus;
+
     public InvertedIndex(){
         this.invertedIndex = new TreeMap<String,Posting>();
     }
 
     public InvertedIndex(Corpus c){
+        this.corpus = c;
         this.invertedIndex = new TreeMap<String,Posting>();
         Vocabulary v = new Vocabulary();
         v.populateVocab(c);
@@ -22,7 +33,7 @@ public class InvertedIndex {
             String word = (String) iter.next();
             this.getInvertedIndex().put(word,c.getPosting(word));
         }
-
+        System.out.print("Index created");
     }
 
     public void printIndex(){

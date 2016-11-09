@@ -370,4 +370,9 @@ public class PreProcessing {
     public static String dealWithNegation(String content){
         return content;
     }
+
+    public static void main(String[] args) throws Exception{
+        String test = "Alok K Alok alok alok Shukla";
+        System.out.print(PreProcessing.removeDuplicates(PreProcessing.tokenize(test)));
+    }
 }
