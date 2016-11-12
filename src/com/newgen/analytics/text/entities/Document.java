@@ -75,7 +75,7 @@ public class Document {
 
         int length = 0;
         Map<String,Integer> docMap = new HashMap<String,Integer>();
-        List<String> tokens = PreProcessing.tokenize(content);
+        List<String> tokens = PreProcessing.removeStopWords(PreProcessing.tokenize(content));
         for(int i=0;i<tokens.size();i++){
             length++;
             if(null==docMap.get(tokens.get(i))){

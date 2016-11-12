@@ -357,17 +357,31 @@ public class PreProcessing {
         return res;
     }
 
-    public static List<String> tokeniseAndRemoveDuplicates(String content) throws Exception{
-
-
-     return removeDuplicates((tokenize(dealWithNegation(content))));
-    }
+//    public static List<String> tokeniseAndRemoveDuplicates(String content) throws Exception{
+//
+//
+////     return removeDuplicates((tokenize(dealWithNegation(content))));
+//    }
 
     public boolean checkIfNegative(String content){
 
         return false;
     }
     public static String dealWithNegation(String content){
+//        String[] negations ={"not","isnt","aint","arent","wasnt","werent","hasnt","havnt","hadnt","wont","cant","couldnt","darent","didnt","doesnt","dont","hasnt","havent","hadnt","isnt","maynt","mightnt","mustnt","neednt","oughtnt","shant","shouldnt","wasnt","werent","wont","wouldnt",               ,"aren't","can't","couldn't","daren't","didn't","doesn't","don't","hasn't","haven't","hadn't","isn't","mayn't","mightn't","mustn't","needn't","oughtn't","shan't","shouldn't","wasn't","weren't","won't","wouldn't"};
+//        String[] punctuations = {",",".",";","!"};
+//        List<String> negationsList = new ArrayList<String>(Arrays.asList(negations));
+//        String[] sentences = content.split(".");
+//        int p=0;
+//        while(p<content.length()){
+//            for(int j=0;j<negationsList.size();j++){
+//                p = content.indexOf(negationsList.get(j));
+//                String prev = content.substring(0,p);
+////                int firstPunctation =
+////                String treatmentNeeded = content.substring(p,content.in)
+//            }
+//            p=content.indexOf("not");
+//        }
         return content;
     }
 
@@ -375,4 +389,8 @@ public class PreProcessing {
         String test = "Alok K Alok alok alok Shukla";
         System.out.print(PreProcessing.removeDuplicates(PreProcessing.tokenize(test)));
     }
+
+//    private int getIndexOfFirstPunctuation(String content){
+//
+//    }
 }

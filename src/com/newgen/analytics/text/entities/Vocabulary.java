@@ -48,6 +48,7 @@ public class Vocabulary {
 
         Vocabulary v = new Vocabulary();
         v.populateVocab(c);
+        System.out.println(v.getVocab());
 
         System.out.print(v.getVocab());
     }

@@ -21,7 +21,7 @@ public class BM25{
         Iterator it = docs.iterator();
         while (it.hasNext()){
             Document d = (Document)it.next();
-            List<String> tokens = PreProcessing.removeDuplicates(PreProcessing.tokenize(query.getContent()));
+            List<String> tokens = PreProcessing.removeStopWords(PreProcessing.removeDuplicates(PreProcessing.tokenize(query.getContent())));
             for(int j=0;j<tokens.size();j++){
                 String word = tokens.get(j);
                 int wq = query.getContentMap().get(word);
@@ -56,8 +56,8 @@ public class BM25{
         c.addToCorpus(d1);
         c.addToCorpus(d2);
 
-//        Vocabulary v = new Vocabulary();
-//        v.populateVocab(c);
+        Vocabulary v = new Vocabulary();
+        v.populateVocab(c);
 //
 //        System.out.println(v.getVocab());
 
@@ -99,14 +99,16 @@ public class BM25{
 
             }
         }catch(Exception e){
-
+        e.printStackTrace();
         }
 
-
+//        Vocabulary v = new Vocabulary();
+//        v.populateVocab(c);
+//        System.out.println(v.getVocab());
         InvertedIndex idx = new InvertedIndex(c);
 
 
-        File file = new File("results/ResulsBM25.csv");
+        File file = new File("results/ResulsBM25Opt.csv");
 
 
         // if file doesnt exists, then create it
@@ -122,21 +124,30 @@ public class BM25{
                 String[] data = line.split("\t");
 
 
-
                 Document query = new Document();
-                query.createDocument(data[1],"");
+                query.createDocument(data[1], "");
                 query.setLabel(data[0]);
 
-                Iterator it = scorer.sortByValue(scorer.getBM25Score(idx,query,25,0.5)).entrySet().iterator();
-                int count = 0;
-                while(count++<5){
-                    bw.write(data[0]+",");
-                    bw.write(data[1]+",");
-                    Map.Entry<String,BigDecimal> entry= (Map.Entry<String, BigDecimal>) it.next();
-                    Document d = c.getDocByID(entry.getKey());
-                    bw.write(d.getLabel()+",");
-                    bw.write(d.getContent()+",");
-                    bw.write(entry.getValue().toString()+"\n");
+                double b = 0.1;
+                while (b < 1.0) {
+                    int k=5;
+                    while(k<100) {
+                        Iterator it = scorer.sortByValue(scorer.getBM25Score(idx, query, k, b)).entrySet().iterator();
+                        int count = 0;
+                        bw.write(Integer.toString(k)+",= K,"+Double.toString(b)+",= b,"+"SEP\n");
+                        while (count++ < 30) {
+
+                            bw.write(data[0] + ",");
+                            bw.write(data[1] + ",");
+                            Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
+                            Document d = c.getDocByID(entry.getKey());
+                            bw.write(d.getLabel() + ",");
+                            bw.write(d.getContent() + ",");
+                            bw.write(entry.getValue().toString() + "\n");
+                        }
+                      k=k+5;
+                    }
+                    b = b + 0.1;
                 }
             }
 
@@ -150,10 +161,14 @@ public class BM25{
 
 
         }catch(Exception e){
-
+        e.printStackTrace();
         }
         bw.close();
         br.close();
     }
+
+//    public List<Double> optimise(InvertedIndex idx,String testFile){
+//
+//    }
 
 }
