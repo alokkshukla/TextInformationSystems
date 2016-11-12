@@ -26,8 +26,8 @@ public class InvertedIndex {
     public InvertedIndex(Corpus c){
         this.corpus = c;
         this.invertedIndex = new TreeMap<String,Posting>();
-        Vocabulary v = new Vocabulary();
-        v.populateVocab(c);
+        Vocabulary v = new Vocabulary(c);
+
         Iterator iter = v.getVocab().iterator();
         while (iter.hasNext()) {
             String word = (String) iter.next();
@@ -62,8 +62,8 @@ public class InvertedIndex {
         c.getCorpus().add(d1);
         c.getCorpus().add(d2);
 
-        Vocabulary v = new Vocabulary();
-        v.populateVocab(c);
+        Vocabulary v = new Vocabulary(c);
+
 
         System.out.println(v.getVocab());
 

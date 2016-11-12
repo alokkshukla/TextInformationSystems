@@ -9,26 +9,9 @@ import java.util.*;
 public class Corpus {
 
     private Set<Document> corpus;
-
-    public double getAvdl() {
-
-
-        Set<Document> docs = this.getCorpus();
-        Iterator it = docs.iterator();
-        double totalLength = 0.0;
-        while(it.hasNext()){
-           Document d = (Document)it.next();
-            totalLength+=d.getLength();
-        }
-       avdl = (double)totalLength/docs.size();
-        return avdl;
-    }
-
-    public void setAvdl(double avdl) {
-        this.avdl = avdl;
-    }
-
     private double avdl;
+    private int size;
+
 
     public int getSize() {
         return this.getCorpus().size();
@@ -38,7 +21,23 @@ public class Corpus {
         this.size = size;
     }
 
-    private int size;
+    public double getAvdl() {
+
+
+        Set<Document> docs = this.getCorpus();
+        Iterator it = docs.iterator();
+        double totalLength = 0.0;
+        while(it.hasNext()){
+            Document d = (Document)it.next();
+            totalLength+=d.getLength();
+        }
+        avdl = (double)totalLength/docs.size();
+        return avdl;
+    }
+
+    public void setAvdl(double avdl) {
+        this.avdl = avdl;
+    }
 
     public Corpus(Set<Document> corpus) {
         this.corpus = corpus;
@@ -84,9 +83,7 @@ public class Corpus {
                 post.getPosting().put(d.getDocID(),count);
             }
         }
-        for(int i=0;i<corpus.size();i++){
 
-        }
         return post;
     }
 
@@ -110,4 +107,6 @@ public class Corpus {
         this.avdl = getAvdl();
         this.size+=1;
     }
+
+
 }

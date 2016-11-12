@@ -26,12 +26,15 @@ public class Vocabulary {
         this.vocab = vocab;
     }
 
-    public void populateVocab(Corpus c){
+    public Vocabulary(Corpus c){
+        this.vocab = new HashSet<String>();
         Iterator iter = c.getCorpus().iterator();
         while (iter.hasNext()) {
             Document doc = (Document)iter.next();
             Set<String> words = doc.getContentMap().keySet();
-            this.getVocab().addAll(words);
+            if(null!=words) {
+                this.getVocab().addAll(words);
+            }
 ;        }
     }
 
@@ -46,8 +49,8 @@ public class Vocabulary {
         c.getCorpus().add(d1);
         c.getCorpus().add(d2);
 
-        Vocabulary v = new Vocabulary();
-        v.populateVocab(c);
+        Vocabulary v = new Vocabulary(c);
+
         System.out.println(v.getVocab());
 
         System.out.print(v.getVocab());

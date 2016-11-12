@@ -45,6 +45,62 @@ public class BM25{
         return scores;
     }
 
+    public void setTFIDF(InvertedIndex idx) throws Exception{
+        Map<String,BigDecimal> scores=new HashMap<>();
+        Corpus c = idx.getCorpus();
+        Set<Document> documents = c.getCorpus();
+        double avdl = c.getAvdl();
+        int size = c.getSize();
+        Vocabulary v = new Vocabulary(c);
+        Set<String> words = v.getVocab();
+        Iterator it = words.iterator();
+
+        while(it.hasNext()){
+            String word = (String)it.next();
+            BigDecimal score = BigDecimal.valueOf(0);
+            Iterator i = documents.iterator();
+            while(i.hasNext()){
+                Document d = (Document)i.next();
+
+                int wd=0;
+
+                Map<String,Integer> p = c.getPosting(word).getPosting();
+                if(null!=p.get(Integer.toString(d.getContent().hashCode()))){
+                    wd = p.get(Integer.toString(d.getContent().hashCode()));
+                }
+                int df = p.size();
+                BigDecimal IDF = BigDecimal.valueOf(0);
+                if (df!=0) {
+                    IDF = BigDecimal.valueOf(Math.log((size + 1) / (double) df));
+
+                }
+                BigDecimal TF = BigDecimal.valueOf(((250+1)*wd)/(wd+(250*(1-0.7+0.7*((double)d.getLength()/avdl)))));
+                TF =TF.multiply(IDF);
+                score = score.add(TF);
+
+            }
+            scores.put(word,score);
+        }
+
+
+        File file = new File("results/TFIDFRes.csv");
+
+
+        // if file doesnt exists, then create it
+        if (!file.exists()) file.createNewFile();
+
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        Iterator iter = sortByValue(scores).entrySet().iterator();
+        bw.write("Word,Score\n");
+        while(iter.hasNext()){
+            Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) iter.next();
+            bw.write(entry.getKey()+",");
+            bw.write(entry.getValue().toString()+"\n");
+        }
+        bw.close();
+    }
+
     public static void main1(String[] args) throws Exception{
         Document d1 = new Document();
         d1.createDocument("Alok Kumar ALok","");
@@ -56,8 +112,8 @@ public class BM25{
         c.addToCorpus(d1);
         c.addToCorpus(d2);
 
-        Vocabulary v = new Vocabulary();
-        v.populateVocab(c);
+        Vocabulary v = new Vocabulary(c);
+
 //
 //        System.out.println(v.getVocab());
 
@@ -80,16 +136,52 @@ public class BM25{
                 ));
     }
 
+
     public static void main(String[] args) throws Exception {
         Corpus c = new Corpus();
         BM25 scorer = new BM25();
+        String[] data = new String[2];
         BufferedReader br = null;
+        String line;
+        try {
+
+            br = new BufferedReader(new FileReader("data/Data.tsv"));
+            while ((line = br.readLine()) != null) {
+                data = line.split("\t");
+                {
+                    Document d = new Document();
+                    if(data.length>1) {
+                        d.createDocument(data[1], "");
+                        d.setLabel(data[0]);
+                        c.addToCorpus(d);
+                    }
+
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+           // System.out.print(data);
+        }
+
+        //Vocabulary v = new Vocabulary(c);
+
+//        System.out.println(v.getVocab());
+        InvertedIndex idx = new InvertedIndex(c);
+        scorer.setTFIDF(idx);
+    }
+
+    public static void main3(String[] args) throws Exception {
+        Corpus c = new Corpus();
+        BM25 scorer = new BM25();
+        BufferedReader br = null;
+        String[] data = new String[2];
         String line;
         try {
 
             br = new BufferedReader(new FileReader("data/Data.train"));
             while ((line = br.readLine()) != null) {
-                String[] data = line.split("\t");
+                data = line.split("\t");
                 {
                     Document d = new Document();
                     d.createDocument(data[1],"");
@@ -100,6 +192,7 @@ public class BM25{
             }
         }catch(Exception e){
         e.printStackTrace();
+
         }
 
 //        Vocabulary v = new Vocabulary();
@@ -121,7 +214,7 @@ public class BM25{
 
             br = new BufferedReader(new FileReader("data/Data.test"));
             while ((line = br.readLine()) != null) {
-                String[] data = line.split("\t");
+                data = line.split("\t");
 
 
                 Document query = new Document();
