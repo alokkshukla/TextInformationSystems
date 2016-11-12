@@ -46,6 +46,16 @@ public class BM25{
     }
 
     public void setTFIDF(InvertedIndex idx) throws Exception{
+        File file = new File("results/TFIDFRes.csv");
+
+
+        // if file doesnt exists, then create it
+        if (!file.exists()) file.createNewFile();
+
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        bw.write("Word,Score\n");
         Map<String,BigDecimal> scores=new HashMap<>();
         Corpus c = idx.getCorpus();
         Set<Document> documents = c.getCorpus();
@@ -80,24 +90,12 @@ public class BM25{
 
             }
             scores.put(word,score);
+            bw.write(word+",");
+            bw.write(score.toString()+"\n");
         }
 
 
-        File file = new File("results/TFIDFRes.csv");
 
-
-        // if file doesnt exists, then create it
-        if (!file.exists()) file.createNewFile();
-
-        FileWriter fw = new FileWriter(file.getAbsoluteFile());
-        BufferedWriter bw = new BufferedWriter(fw);
-        Iterator iter = sortByValue(scores).entrySet().iterator();
-        bw.write("Word,Score\n");
-        while(iter.hasNext()){
-            Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) iter.next();
-            bw.write(entry.getKey()+",");
-            bw.write(entry.getValue().toString()+"\n");
-        }
         bw.close();
     }
 
