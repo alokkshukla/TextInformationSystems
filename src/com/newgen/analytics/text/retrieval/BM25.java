@@ -17,7 +17,9 @@ public class BM25{
         Map<String,BigDecimal> scores = new HashMap<String,BigDecimal>();
 
         Corpus c = idx.getCorpus();
+        double avdl = c.getAvdl();
         Set<Document> docs = c.getCorpus();
+        int size = c.getSize();
         Iterator it = docs.iterator();
         while (it.hasNext()){
             Document d = (Document)it.next();
@@ -25,18 +27,19 @@ public class BM25{
             for(int j=0;j<tokens.size();j++){
                 String word = tokens.get(j);
                 int wq = query.getContentMap().get(word);
+                Map<String,Integer> p = c.getPosting(word).getPosting();
                 int wd=0;
-                if(null!=c.getPosting(word).getPosting().get(Integer.toString(d.getContent().hashCode()))){
-                    wd = c.getPosting(word).getPosting().get(Integer.toString(d.getContent().hashCode()));
+                if(null!=p.get(Integer.toString(d.getContent().hashCode()))){
+                    wd = p.get(Integer.toString(d.getContent().hashCode()));
                 }
 
-                int df = c.getPosting(word).getPosting().size();
+                int df = p.size();
                 BigDecimal IDF = BigDecimal.valueOf(0);
                 if (df!=0) {
-                    IDF = BigDecimal.valueOf(Math.log((c.getSize() + 1) / (double) df));
+                    IDF = BigDecimal.valueOf(Math.log((size + 1) / (double) df));
 
                 }
-                BigDecimal TF = BigDecimal.valueOf(((k+1)*wd)/(double)(wd+(k*(1-b+b*((double)d.getLength()/(double)c.getAvdl())))));
+                BigDecimal TF = BigDecimal.valueOf(((k+1)*wd)/(wd+(k*(1-b+b*((double)d.getLength()/avdl)))));
                 TF =TF.multiply(IDF);
                 TF = TF.multiply(BigDecimal.valueOf(wq));
                 scores.put(Integer.toString(d.getContent().hashCode()),TF);

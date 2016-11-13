@@ -115,7 +115,7 @@ public class NaiveBayesModel {
         if (null == nbModel) {
             nbModel = new HashMap<String, Map<String, Integer>>();
         }
-        List<String> features = (preProcessing.tokenize(preProcessing.dealWithNegation(content)));
+        List<String> features = (preProcessing.tokenize((content)));
         int length = features.size();
         if (null == catCounts) {
             catCounts = new HashMap<String, Integer>();
@@ -160,7 +160,7 @@ public class NaiveBayesModel {
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main1(String[] args) throws Exception {
         String content = "just plain boring";
         String cat = "NEG";
         NaiveBayesModel model = new NaiveBayesModel();
@@ -205,13 +205,13 @@ public class NaiveBayesModel {
                     wordCountCat = getNbModel().get(word).get(cat);
                 }
             }
-            prob = BigDecimal.valueOf((wordCountCat + 1) / (double) (catCount + vocabLength));
+            prob = BigDecimal.valueOf((wordCountCat + 0.45) / (double) (catCount + vocabLength));
 
             totalProb = totalProb.multiply(prob);
         }
         return totalProb.multiply(catProb);
     }
-    public static void main1(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
 //        SentimentAnalyzer sent = new SentimentAnalyzer();
         NaiveBayesModel model = new NaiveBayesModel();
         NaiveBayesModel model2 = new NaiveBayesModel();
@@ -219,16 +219,18 @@ public class NaiveBayesModel {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/TrainingData.csv"));
+            br = new BufferedReader(new FileReader("data/Train"));
             while ((line = br.readLine()) != null) {
                 String[] data = line.split("\t");
                     {
-                        model.addToModel(data[1], data[0]);
+                        if(data.length>1) {
+                            model.addToModel(data[1], data[0].trim());
+                        }
                     }
 
             }
         }catch(Exception e){
-
+            e.printStackTrace();
         }
 
 
@@ -239,7 +241,7 @@ public class NaiveBayesModel {
         System.out.println(model.getCatDocCounts());
         Map<String,BigDecimal> scores = new HashMap<String,BigDecimal>();
 
-        File file = new File("results/ResulsNB5.csv");
+        File file = new File("results/ResulsNBSprinkled.csv");
 
 
         // if file doesnt exists, then create it
@@ -249,33 +251,35 @@ public class NaiveBayesModel {
 
         FileWriter fw = new FileWriter(file.getAbsoluteFile());
         BufferedWriter bw = new BufferedWriter(fw);
-        bw.write("Expected Category, Predicted Category, Prob, Content\n");
+        bw.write("Expected Category, Predicted Category, Next, Diff,Content\n");
         try {
 
-            br = new BufferedReader(new FileReader("data/Data.test"));
+            br = new BufferedReader(new FileReader("data/Test"));
             while ((line = br.readLine()) != null) {
                 String[] data = line.split("\t");
 
 //                    System.out.println("-----------------------------------------------------------------------------------------------------");
-                bw.write(data[0]+",");
+
 
 
                     scores.put("COMPLAINT",model.getCategoryProbability(data[1], "COMPLAINT"));
 
                     scores.put("REQUEST", model.getCategoryProbability(data[1], "REQUEST"));
-                    scores.put("LEAD", model.getCategoryProbability(data[1], "LEAD"));
+                    scores.put("MISCEALLANEOUS", model.getCategoryProbability(data[1], "MISCEALLANEOUS"));
                     scores.put("SUGGESTION", model.getCategoryProbability(data[1], "SUGGESTION"));
                     scores.put("COMPLIMENT",model.getCategoryProbability(data[1], "COMPLIMENT"));
                     Iterator it = model.sortByValue(scores).entrySet().iterator();
                     Map.Entry<String,BigDecimal> entry= (Map.Entry<String, BigDecimal>) it.next();
 
+                    if(!data[0].equalsIgnoreCase(entry.getKey())) {
 
+                        bw.write(data[0] + ",");
+                        bw.write(entry.getKey() +",");
+                        Map.Entry<String, BigDecimal> entry2 = (Map.Entry<String, BigDecimal>) it.next();
+                        bw.write(entry2.getKey() + "," + entry2.getValue().subtract(entry.getValue()).toPlainString() + ",");
 
-                        bw.write(entry.getKey()+entry.getValue().toEngineeringString() + ",");
-                Map.Entry<String,BigDecimal> entry2= (Map.Entry<String, BigDecimal>) it.next();
-                bw.write(entry2.getKey()+entry2.getValue().toString() + ",");
-
-                bw.write(data[1]+"\n");
+                        bw.write(data[1] + "\n");
+                    }
                     }
 
 
@@ -288,7 +292,7 @@ public class NaiveBayesModel {
 
 
         }catch(Exception e){
-
+            e.printStackTrace();
         }
         bw.close();
         br.close();

@@ -1,6 +1,7 @@
 package com.newgen.analytics.text.utils;
 
 import com.newgen.analytics.text.classification.naivebayes.VocabularyModel;
+import com.newgen.analytics.text.classification.sentiment.SentimentAnalyzer;
 import opennlp.tools.lemmatizer.SimpleLemmatizer;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.postag.POSTaggerME;
@@ -195,151 +196,156 @@ public class PreProcessing {
         return lemma;
     }
 
-//    public static void main(String[] args) throws Exception{
-//        PreProcessing helper = new PreProcessing();
-//        SentimentAnalyzer an = new SentimentAnalyzer();
-//        File file = new File("data/ScoredData2.csv");
-//
-//        // if file doesnt exists, then create it
-//        if (!file.exists()) {
-//            file.createNewFile();
-//        }
-//
-//        FileWriter fw = new FileWriter(file.getAbsoluteFile());
-//        BufferedWriter bw = new BufferedWriter(fw);
-//
-//
-//
-//        String csvFile = "data/Data.tsv";
-//        BufferedReader br = null;
-//        String line = "";
-//        List<String> modifiedContent = new ArrayList<String>();
-//
-//        try {
-//
-//            br = new BufferedReader(new FileReader(csvFile));
-//            while ((line = br.readLine()) != null) {
-//                String[] data = line.split("\t");
+    public static void main(String[] args) throws Exception{
+        PreProcessing helper = new PreProcessing();
+        SentimentAnalyzer an = new SentimentAnalyzer();
+        File file = new File("data/ScoredData.tsv");
+
+        // if file doesnt exists, then create it
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+
+
+
+        String csvFile = "data/Train_";
+        BufferedReader br = null;
+        String line = "";
+        List<String> modifiedContent = new ArrayList<String>();
+
+        try {
+
+            br = new BufferedReader(new FileReader(csvFile));
+            while ((line = br.readLine()) != null) {
+
+                String[] data = line.split("\t");
+                if (data.length > 1) {
 //                bw.write(data[0]);
 //
-//               // bw.write("\t");
+//                // bw.write("\t");
 //                bw.write(",");
 //                bw.write(an.getSentiment(data[1]).toString());
 //                bw.write(","+data[1]+",");
-//                List<String> tokens = helper.tokenize(data[1].toLowerCase());
+
+                    List<String> tokens = helper.tokenize(data[1].toLowerCase());
 //
 //                List<String> stems =  new ArrayList<String>();
 //
 //                for(int i=0;i<tokens.size();i++){
 //                    stems.add(helper.lemmatize(tokens.get(i)));
 //                }
-//                List<String> features = helper.removeStopWords(helper.removeDuplicates(stems));
-//                if(vmod.getVocabModel().get(data[0])==null){
-//                    vmod.getVocabModel().put(data[0],new HashSet<String>(features));
-//                }else{
-//                    Set<String> temp = vmod.getVocabModel().get(data[0]);
-//                    temp.addAll(features);
-//                    vmod.getVocabModel().put(data[0],temp);
-//                }
+                    List<String> features = (helper.removeDuplicates(tokens));
+                    if (vmod.getVocabModel().get(data[0]) == null) {
+                        vmod.getVocabModel().put(data[0], new HashSet<String>(features));
+                    } else {
+                        Set<String> temp = vmod.getVocabModel().get(data[0]);
+                        temp.addAll(features);
+                        vmod.getVocabModel().put(data[0], temp);
+                    }
 //                for(int i=0;i<features.size();i++){
 //                    bw.write(features.get(i));
 //                    bw.write(" ");
 //                }
-//
+
 //                bw.write("\n");
-//            }
-//
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//
-//            if (br != null) {
-//                try {
-//                    br.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-////        }
-////       for(int j=0;j<300;j++){
-////           bw.write("REQUEST");
-////           bw.write("\t");
-////
-////         // In real life, the Random object should be rather more shared than this
-////           int i = 0;
-////           List<String> words = new ArrayList<String>();
-////           words.addAll(vmod.getVocabModel().get("REQUEST"));
-////           for(int k=0;k<50;k++) {
-////                bw.write(words.get( new Random().nextInt(words.size())));
-////               bw.write(" ");
-////           }
-////           bw.write("\n");
-////       }
-////        for(int j=0;j<300;j++){
-////            bw.write("LEAD");
-////            bw.write("\t");
-////
-////            // In real life, the Random object should be rather more shared than this
-////            int i = 0;
-////            List<String> words = new ArrayList<String>();
-////            words.addAll(vmod.getVocabModel().get("LEAD"));
-////            for(int k=0;k<50;k++) {
-////                bw.write(words.get( new Random().nextInt(words.size())));
-////                bw.write(" ");
-////            }
-////            bw.write("\n");
-////        }
-////        for(int j=0;j<300;j++){
-////            bw.write("SUGGESTION");
-////            bw.write("\t");
-////
-////            // In real life, the Random object should be rather more shared than this
-////            int i = 0;
-////            List<String> words = new ArrayList<String>();
-////            words.addAll(vmod.getVocabModel().get("SUGGESTION"));
-////            for(int k=0;k<50;k++) {
-////                bw.write(words.get( new Random().nextInt(words.size())));
-////                bw.write(" ");
-////            }
-////            bw.write("\n");
-////        }
-////        for(int j=0;j<300;j++){
-////            bw.write("COMPLIMENT");
-////            bw.write("\t");
-////
-////            // In real life, the Random object should be rather more shared than this
-////            int i = 0;
-////            List<String> words = new ArrayList<String>();
-////            words.addAll(vmod.getVocabModel().get("COMPLIMENT"));
-////            for(int k=0;k<50;k++) {
-////                bw.write(words.get( new Random().nextInt(words.size())));
-////                bw.write(" ");
-////            }
-////            bw.write("\n");
-////        }
-////        bw.close();
-//
-////        File file2 = new File("data/vocab.csv");
-////
-////        // if file doesnt exists, then create it
-////        if (!file2.exists()) {
-////            file2.createNewFile();
-////        }
-////
-////        FileWriter fw2 = new FileWriter(file2.getAbsoluteFile());
-////        BufferedWriter bw2 = new BufferedWriter(fw2);
-////
-////
-////        for (Map.Entry<String, Set<String>> entry : vmod.getVocabModel().entrySet())
-////        {
-////           bw2.write(entry.getKey() + "\n" + entry.getValue());
-////            bw2.write("\n");
-////        }
-////        bw2.close();
-//    }
+                }
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+
+            if (br != null) {
+                try {
+                    br.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+
+       for(int j=0;j<500;j++){
+        bw.write("REQUEST");
+        bw.write("\t");
+
+        // In real life, the Random object should be rather more shared than this
+        int i = 0;
+        List<String> words = new ArrayList<String>();
+        words.addAll(vmod.getVocabModel().get("REQUEST"));
+        for(int k=0;k<50;k++) {
+            bw.write(words.get( new Random().nextInt(words.size())));
+            bw.write(" ");
+        }
+        bw.write("\n");
+    }
+        for(int j=0;j<700;j++){
+        bw.write("SUGGESTION");
+        bw.write("\t");
+
+        // In real life, the Random object should be rather more shared than this
+        int i = 0;
+        List<String> words = new ArrayList<String>();
+        words.addAll(vmod.getVocabModel().get("SUGGESTION"));
+        for(int k=0;k<50;k++) {
+            bw.write(words.get( new Random().nextInt(words.size())));
+            bw.write(" ");
+        }
+        bw.write("\n");
+    }
+        for(int j=0;j<800;j++){
+        bw.write("COMPLIMENT");
+        bw.write("\t");
+
+        // In real life, the Random object should be rather more shared than this
+        int i = 0;
+        List<String> words = new ArrayList<String>();
+        words.addAll(vmod.getVocabModel().get("COMPLIMENT"));
+        for(int k=0;k<50;k++) {
+            bw.write(words.get( new Random().nextInt(words.size())));
+            bw.write(" ");
+        }
+        bw.write("\n");
+    }
+        for(int j=0;j<500;j++){
+        bw.write("MISCEALLANEOUS");
+        bw.write("\t");
+
+        // In real life, the Random object should be rather more shared than this
+        int i = 0;
+        List<String> words = new ArrayList<String>();
+        words.addAll(vmod.getVocabModel().get("MISCEALLANEOUS"));
+        for(int k=0;k<50;k++) {
+            bw.write(words.get( new Random().nextInt(words.size())));
+            bw.write(" ");
+        }
+        bw.write("\n");
+    }
+        bw.close();
+
+    File file2 = new File("data/vocab.csv");
+
+    // if file doesnt exists, then create it
+        if (!file2.exists()) {
+        file2.createNewFile();
+    }
+
+    FileWriter fw2 = new FileWriter(file2.getAbsoluteFile());
+    BufferedWriter bw2 = new BufferedWriter(fw2);
+
+
+        for (Map.Entry<String, Set<String>> entry : vmod.getVocabModel().entrySet())
+    {
+        bw2.write(entry.getKey() + "\n" + entry.getValue());
+        bw2.write("\n");
+    }
+        bw2.close();
+    }
 
     public String preProcess(String content) throws Exception {
         List<String> tokens = this.tokenize(content.toLowerCase());
@@ -385,7 +391,7 @@ public class PreProcessing {
         return content;
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main4(String[] args) throws Exception{
         String test = "Alok K Alok alok alok Shukla";
         System.out.print(PreProcessing.removeDuplicates(PreProcessing.tokenize(test)));
     }
