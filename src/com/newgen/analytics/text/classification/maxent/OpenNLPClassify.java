@@ -22,9 +22,9 @@ public class OpenNLPClassify {
             IOException {
 
         OpenNLPClassify maxent = new OpenNLPClassify();
-        maxent.train();
+//        maxent.train();
 
-        File file = new File("results/MaxentRes20k.csv");
+        File file = new File("results/MaxentResultsComplete.csv");
 
 
         // if file doesnt exists, then create it
@@ -39,14 +39,14 @@ public class OpenNLPClassify {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Test"));
+            br = new BufferedReader(new FileReader("data/CompleteDataSet"));
             while ((line = br.readLine()) != null) {
                 data = line.split("\t");
                 {
 
                     if(data.length>1) {
                         String tag = maxent.classify(data[1]);
-                        if(!tag.equalsIgnoreCase(data[0])){
+                        if(true){
                             bw.write(data[0]+",");
                             bw.write(tag+",");
                             bw.write(data[1]+"\n");

@@ -180,7 +180,7 @@ public class BM25 {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Train"));
+            br = new BufferedReader(new FileReader("data/Train_"));
             while ((line = br.readLine()) != null) {
                 data = line.split("\t");
                 {
@@ -202,7 +202,7 @@ public class BM25 {
         InvertedIndex idx = new InvertedIndex(c);
 
 
-        File file = new File("results/ResulsBM25Final.csv");
+        File file = new File("results/ResulsBM25.csv");
 
 
         // if file doesnt exists, then create it
@@ -226,7 +226,7 @@ public class BM25 {
 
                 Map<String, Integer> results = new HashMap<>();
 
-                int k = 50;
+                int k = 300;
 
                 Iterator it = scorer.sortByValue(scorer.getBM25Score(idx, query, k, b)).entrySet().iterator();
                 int count = 0;
@@ -234,7 +234,7 @@ public class BM25 {
 
                 Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
 
-                if(!data[0].equalsIgnoreCase(entry.getKey())) {
+                if(true) {
                     bw.write(data[0] + "," + (String) entry.getKey() + "," + data[1] + "\n");
                 }
 

@@ -219,7 +219,7 @@ public class NaiveBayesModel {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Train"));
+            br = new BufferedReader(new FileReader("data/Train_"));
             while ((line = br.readLine()) != null) {
                 String[] data = line.split("\t");
                     {
@@ -241,7 +241,7 @@ public class NaiveBayesModel {
         System.out.println(model.getCatDocCounts());
         Map<String,BigDecimal> scores = new HashMap<String,BigDecimal>();
 
-        File file = new File("results/ResulsNBSprinkled.csv");
+        File file = new File("results/ResulsNB.csv");
 
 
         // if file doesnt exists, then create it
@@ -271,7 +271,7 @@ public class NaiveBayesModel {
                     Iterator it = model.sortByValue(scores).entrySet().iterator();
                     Map.Entry<String,BigDecimal> entry= (Map.Entry<String, BigDecimal>) it.next();
 
-                    if(!data[0].equalsIgnoreCase(entry.getKey())) {
+                    if(true) {
 
                         bw.write(data[0] + ",");
                         bw.write(entry.getKey() +",");
