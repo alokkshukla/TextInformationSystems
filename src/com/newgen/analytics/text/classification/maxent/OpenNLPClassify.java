@@ -18,7 +18,7 @@ import opennlp.tools.util.featuregen.BigramNameFeatureGenerator;
 
 public class OpenNLPClassify {
 
-    public static void main5(String[] args) throws InvalidFormatException,
+    public static void main(String[] args) throws InvalidFormatException,
             IOException {
 
         OpenNLPClassify maxent = new OpenNLPClassify();
@@ -67,12 +67,12 @@ public class OpenNLPClassify {
     }
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main7(String[] args) throws Exception {
         new OpenNLPClassify().test("","need a credit card","model/maxent.ser");
     }
     public void train() {
         String onlpModelPath = "model/maxent.ser";
-        String trainingDataFilePath = "data/Train";
+        String trainingDataFilePath = "data/Train_";
         DoccatModel model = null;
         InputStream dataInputStream = null;
         OutputStream onlpModelOutput = null;
@@ -89,12 +89,13 @@ public class OpenNLPClassify {
             // Calculate the training model
             TrainingParameters par = new TrainingParameters();
             par.put("Cutoff","1");
-            par.put("Iterations","50000");
+            par.put("Iterations","20000");
 //            FeatureGenerator feat = (FeatureGenerator) new BigramNameFeatureGenerator();
 //            TokenizerModel mod = new TokenizerModel();
 //            Tokenizer tok = new TokenizerME();
             DoccatFactory doccatFactory = new DoccatFactory();
             model = DocumentCategorizerME.train("en", sampleStream, par, doccatFactory);
+
         } catch (IOException e) {
             System.err.println(e.getMessage());
         } finally {
@@ -136,7 +137,9 @@ public class OpenNLPClassify {
         String classificationModelFilePath = path;
         InputStream is = new FileInputStream(classificationModelFilePath);
         DoccatModel classificationModel = new DoccatModel(is);
-        DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel);
+        DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel,
+                new NGramFeatureGenerator(),
+                new BagOfWordsFeatureGenerator());
         DocumentCategorizerEvaluator modelEvaluator = new DocumentCategorizerEvaluator(
                 classificationME);
         String expectedDocumentCategory = cat;
