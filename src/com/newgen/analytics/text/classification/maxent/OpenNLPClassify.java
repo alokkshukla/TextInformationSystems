@@ -24,7 +24,7 @@ public class OpenNLPClassify {
         OpenNLPClassify maxent = new OpenNLPClassify();
 //        maxent.train();
 
-        File file = new File("results/MaxentResultsComplete.csv");
+        File file = new File("results/MaxentResults.csv");
 
 
         // if file doesnt exists, then create it
@@ -39,7 +39,7 @@ public class OpenNLPClassify {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/CompleteDataSet"));
+            br = new BufferedReader(new FileReader("data/Train_"));
             while ((line = br.readLine()) != null) {
                 data = line.split("\t");
                 {
