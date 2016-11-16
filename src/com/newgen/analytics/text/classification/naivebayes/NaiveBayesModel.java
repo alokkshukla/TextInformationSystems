@@ -354,12 +354,7 @@ public class NaiveBayesModel {
             br = new BufferedReader(new FileReader("data/Test"));
             while ((line = br.readLine()) != null) {
                 String[] data = line.split("\t");
-
-//                    System.out.println("-----------------------------------------------------------------------------------------------------");
-
-
                 scores.put("COMPLAINT", model.getCategoryProbability(data[1], "COMPLAINT"));
-
                 scores.put("REQUEST", model.getCategoryProbability(data[1], "REQUEST"));
                 scores.put("MISCEALLANEOUS", model.getCategoryProbability(data[1], "MISCEALLANEOUS"));
                 scores.put("SUGGESTION", model.getCategoryProbability(data[1], "SUGGESTION"));
@@ -378,20 +373,11 @@ public class NaiveBayesModel {
                 }
             }
 
-
-//                System.out.println("-----------------------------------------------------------------------------------------------------");
-
-
         } catch (Exception e) {
             e.printStackTrace();
         }
         bw.close();
         br.close();
-//        System.out.println("Req: "+model.getCategoryProbability("can you help me with fixing this", "REQUEST").toPlainString());
-//    //    System.out.println(model.getCategoryProbability("Looking for a credit card", "COMPLAINT").toPlainString());
-//        System.out.println("Lead: "+model.getCategoryProbability("can you help me with fixing this", "LEAD").toPlainString());
-//        System.out.println("Sugg: "+model.getCategoryProbability("can you help me with fixing this", "SUGGESTION").toPlainString());
-//        System.out.println("Comp: "+model.getCategoryProbability("can you help me with fixing this", "COMPLIMENT").toPlainString());
     }
 
     public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
