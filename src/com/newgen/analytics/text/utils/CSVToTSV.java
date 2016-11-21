@@ -18,7 +18,7 @@ public class CSVToTSV
     public static void main(String[] args)
     {
         CSVToTSV tester = new CSVToTSV();
-        tester.cleanUp("data/RawData.csv", "data/CompleteDataSet");
+        tester.cleanUp("data/DataSet.csv", "data/DataSet");
     }
 
     public void cleanUp(String input, String output)

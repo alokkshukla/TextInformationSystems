@@ -22,9 +22,9 @@ public class OpenNLPClassify {
             IOException {
 
         OpenNLPClassify maxent = new OpenNLPClassify();
-//        maxent.train();
+        maxent.train();
 
-        File file = new File("results/MaxentResults.csv");
+        File file = new File("results/MaxentResults17Nov.csv");
 
 
         // if file doesnt exists, then create it
@@ -39,7 +39,7 @@ public class OpenNLPClassify {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Train_"));
+            br = new BufferedReader(new FileReader("data/Test"));
             while ((line = br.readLine()) != null) {
                 data = line.split("\t");
                 {
@@ -72,7 +72,7 @@ public class OpenNLPClassify {
     }
     public void train() {
         String onlpModelPath = "model/maxent.ser";
-        String trainingDataFilePath = "data/Train_";
+        String trainingDataFilePath = "data/Train";
         DoccatModel model = null;
         InputStream dataInputStream = null;
         OutputStream onlpModelOutput = null;
@@ -89,7 +89,7 @@ public class OpenNLPClassify {
             // Calculate the training model
             TrainingParameters par = new TrainingParameters();
             par.put("Cutoff","1");
-            par.put("Iterations","20000");
+            par.put("Iterations","50000");
 //            FeatureGenerator feat = (FeatureGenerator) new BigramNameFeatureGenerator();
 //            TokenizerModel mod = new TokenizerModel();
 //            Tokenizer tok = new TokenizerME();

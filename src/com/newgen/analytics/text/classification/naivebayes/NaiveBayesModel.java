@@ -117,7 +117,7 @@ public class NaiveBayesModel {
         if (null == nbModel) {
             nbModel = new HashMap<String, Map<String, Integer>>();
         }
-        List<String> features = (preProcessing.tokenize((content)));
+        List<String> features = PreProcessing.lemmatize(PreProcessing.tokenize(content));
         int length = features.size();
         if (null == catCounts) {
             catCounts = new HashMap<String, Integer>();
@@ -145,7 +145,16 @@ public class NaiveBayesModel {
                     wordMap.put(cat, count + 1);
                     nbModel.put(word, wordMap);
                 }
+
+
             }
+            Map<String, Integer> wordMap = nbModel.get(word);
+            if(null==wordMap.get("DOCS")){
+                wordMap.put("DOCS",1);
+            }else{
+                wordMap.put("DOCS",wordMap.get("DOCS")+1);
+            }
+            nbModel.put(word, wordMap);
         }
         Map<String, BigDecimal> temp = getCatProb();
         for (Map.Entry<String, BigDecimal> entry : temp.entrySet()) {
@@ -159,9 +168,13 @@ public class NaiveBayesModel {
         temp.put(cat, prob);
         setCatProb(temp);
 
+        Map<String, Map<String, Integer>> map = this.getNbModel();
+
+
     }
 
-    public NaiveBayesModel trainModel(String trainFilePath){
+
+    public NaiveBayesModel trainModel(String trainFilePath) {
         NaiveBayesModel model = new NaiveBayesModel();
         BufferedReader br = null;
         String line;
@@ -180,7 +193,7 @@ public class NaiveBayesModel {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    return model;
+        return model;
     }
 
 
@@ -214,10 +227,13 @@ public class NaiveBayesModel {
 
     public BigDecimal getCategoryProbability(String content, String cat) throws Exception {
         BigDecimal totalProb = BigDecimal.valueOf(1.0);
+        if (getCatCounts().get(cat) == null) {
+            System.out.print("Inavlid cat");
+        }
         int catCount = getCatCounts().get(cat);
         int vocabLength = getVocabLength();
         BigDecimal catProb = (getCatProb().get(cat));
-        List<String> features = (preProcessing.tokenize(preProcessing.dealWithNegation(content)));
+        List<String> features = PreProcessing.lemmatize(PreProcessing.tokenize((content)));
         for (int i = 0; i < features.size(); i++) {
             String word = features.get(i);
             BigDecimal prob = BigDecimal.valueOf(0.0);
@@ -236,11 +252,11 @@ public class NaiveBayesModel {
         return totalProb.multiply(catProb);
     }
 
-    public ConfusionMatrix testModel(String testFilePath, NaiveBayesModel model, String outoutFile,String[] labels) throws Exception {
+    public ConfusionMatrix testModel(String testFilePath, NaiveBayesModel model, String outoutFile, String[] labels) throws Exception {
 
 
         ConfusionMatrix results = new ConfusionMatrix(labels);
-        Map<String,Map<String,Integer>> confusionMatrix = results.getConfusionMatrix();
+        Map<String, Map<String, Integer>> confusionMatrix = results.getConfusionMatrix();
         Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
         File resfile = new File(outoutFile);
 
@@ -262,7 +278,7 @@ public class NaiveBayesModel {
                 String[] data = line.split("\t");
                 scores.put("COMPLAINT", model.getCategoryProbability(data[1], "COMPLAINT"));
                 scores.put("REQUEST", model.getCategoryProbability(data[1], "REQUEST"));
-                scores.put("MISCEALLANEOUS", model.getCategoryProbability(data[1], "MISCEALLANEOUS"));
+                scores.put("MISCELLANEOUS", model.getCategoryProbability(data[1], "MISCELLANEOUS"));
                 scores.put("SUGGESTION", model.getCategoryProbability(data[1], "SUGGESTION"));
                 scores.put("COMPLIMENT", model.getCategoryProbability(data[1], "COMPLIMENT"));
                 Iterator it = model.sortByValue(scores).entrySet().iterator();
@@ -272,17 +288,17 @@ public class NaiveBayesModel {
                 bw.write(expected + ",");
                 bw.write(predicted + ",");
                 bw.write(data[1] + "\n");
-                if(confusionMatrix.get(predicted)!=null){
-                    Map<String,Integer> entries = confusionMatrix.get(predicted);
-                    if(entries.get(expected)!=null){
-                        entries.put(expected,entries.get(expected)+1);
-                    }else{
-                        entries.put(expected,1);
+                if (confusionMatrix.get(predicted) != null) {
+                    Map<String, Integer> entries = confusionMatrix.get(predicted);
+                    if (entries.get(expected) != null) {
+                        entries.put(expected, entries.get(expected) + 1);
+                    } else {
+                        entries.put(expected, 1);
                     }
-                }else{
-                    Map<String,Integer> entries = new HashMap<>();
-                    entries.put(expected,1);
-                    confusionMatrix.put(predicted,entries);
+                } else {
+                    Map<String, Integer> entries = new HashMap<>();
+                    entries.put(expected, 1);
+                    confusionMatrix.put(predicted, entries);
                 }
 
             }
@@ -295,20 +311,64 @@ public class NaiveBayesModel {
         return results;
     }
 
+    private void getMutualInfo(String featFile, int n) throws IOException {
+        Map<String, Map<String, Integer>> map = this.getNbModel();
+        File file = new File(featFile);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+
+        for (Map.Entry<String, Map<String, Integer>> entry : map.entrySet()) {
+            Map<String, Integer> innerMap = entry.getValue();
+            double dw=0.0;
+            if(null!=entry.getValue().get("DOCS")) {
+                dw = entry.getValue().get("DOCS") / (double) 2320;
+            }else{
+                System.out.print("VOilla");
+            }
+
+            for (Map.Entry<String, Integer> innerEntry : innerMap.entrySet()) {
+                double piw=0,pi=0,mi=0,chi=0;
+
+                if (innerEntry.getKey() != "DOCS") {
+                    bw.write(entry.getKey() + ",");
+                    bw.write(innerEntry.getKey() + ",");
+                    pi = this.getCatDocCounts().get(innerEntry.getKey()) / (double) 2320;
+                    piw = innerEntry.getValue() / dw;
+
+
+                    mi = Math.log(piw / pi);
+
+                    chi = ((n * (dw * dw) * ((piw - pi) * (piw - pi))) / (dw * (1 - dw) * pi * (1 - pi)));
+
+                    bw.write(mi +",");
+                    bw.write(chi +"\n");
+                }
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
-        String trainFile = "data/Train_";
+        String trainFile = "data/Train";
         String testFile = "data/Test";
-        String resFile = "results/NBResults";
+        String resFile = "results/NBResults17Nov";
+        String MIfile = "features/MutualInfo.csv";
+
         NaiveBayesModel helper = new NaiveBayesModel();
         ClassificationEvaluation evaluation = new ClassificationEvaluation();
         NaiveBayesModel model = helper.trainModel(trainFile);
-        String[] labels = {"REQUEST","MISCEALLANEOUS","COMPLIMENT","COMPLAINT","SUGGESTION"};
-        ConfusionMatrix mat = helper.testModel(testFile,model,resFile,labels);
-        System.out.print(evaluation.getEvaluationParameter(mat)[0]);
+        String[] labels = {"REQUEST", "MISCEALLANEOUS", "COMPLIMENT", "COMPLAINT", "SUGGESTION"};
+        //  ConfusionMatrix mat = helper.testModel(testFile,model,resFile,labels);
+        model.getMutualInfo("features/Features.csv",2320);
+//        System.out.print(model.getCatDocCounts());
+//
+//        System.out.print(d.toPlainString());
 
     }
 
-    public static void main8(String[] args) throws Exception {
+    public static void main10(String[] args) throws Exception {
 //        SentimentAnalyzer sent = new SentimentAnalyzer();
         NaiveBayesModel model = new NaiveBayesModel();
         NaiveBayesModel model2 = new NaiveBayesModel();
@@ -316,7 +376,7 @@ public class NaiveBayesModel {
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Train_"));
+            br = new BufferedReader(new FileReader("data/Training"));
             while ((line = br.readLine()) != null) {
                 String[] data = line.split("\t");
                 {
@@ -338,7 +398,7 @@ public class NaiveBayesModel {
         System.out.println(model.getCatDocCounts());
         Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
 
-        File file = new File("results/ResulsNB.csv");
+        File file = new File("results/ResulsNB17Nov.csv");
 
 
         // if file doesnt exists, then create it
@@ -366,8 +426,8 @@ public class NaiveBayesModel {
 
                     bw.write(data[0] + ",");
                     bw.write(entry.getKey() + ",");
-                    Map.Entry<String, BigDecimal> entry2 = (Map.Entry<String, BigDecimal>) it.next();
-                    bw.write(entry2.getKey() + "," + entry2.getValue().subtract(entry.getValue()).toPlainString() + ",");
+//                    Map.Entry<String, BigDecimal> entry2 = (Map.Entry<String, BigDecimal>) it.next();
+//                    bw.write(entry2.getKey() + "," + entry2.getValue().subtract(entry.getValue()).toPlainString() + ",");
 
                     bw.write(data[1] + "\n");
                 }

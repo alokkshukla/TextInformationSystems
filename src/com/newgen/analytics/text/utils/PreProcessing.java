@@ -2,6 +2,11 @@ package com.newgen.analytics.text.utils;
 
 import com.newgen.analytics.text.classification.naivebayes.VocabularyModel;
 import com.newgen.analytics.text.classification.sentiment.SentimentAnalyzer;
+import edu.stanford.nlp.ling.CoreAnnotations;
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.CoreMap;
 import opennlp.tools.lemmatizer.SimpleLemmatizer;
 import opennlp.tools.postag.POSModel;
 import opennlp.tools.postag.POSTaggerME;
@@ -25,6 +30,7 @@ public class PreProcessing {
         pos_model=null;
         stopwordsFile="keywords.txt";
 
+
     }
 
     static SimpleLemmatizer lemmatizer;
@@ -32,6 +38,7 @@ public class PreProcessing {
     static Tokenizer tokenizer;
     static SnowballStemmer stemmer;
     String stopwordsFile;
+    static StanfordCoreNLP pipeline;
     static POSModel pos_model;
     static VocabularyModel vmod = new VocabularyModel();
     public SimpleLemmatizer getLemmatizer() {
@@ -157,14 +164,14 @@ public class PreProcessing {
     return modifiedContent;
     }
 
-    public String getPOSTag(String content){
+    public static String getPOSTag(String content){
         String tag="";
         InputStream modelIn = null;
 
 
         try {
             if(pos_model == null) {
-                modelIn = new FileInputStream("model/en-pos-maxent.bin");
+                modelIn = new FileInputStream("bin/en-pos-maxent.bin");
                 pos_model = new POSModel(modelIn);
             }
         }
@@ -185,18 +192,55 @@ public class PreProcessing {
         return tagger.tag(content);
     }
 
-    public String lemmatize(String word) throws Exception{
+    public static List<String> lemmatize(List<String> words) throws Exception{
 
+        List<String> res = new ArrayList<>();
         if (lemmatizer == null) {
-            InputStream is = new FileInputStream("model/en-lemmatizer.dict");
+            InputStream is = new FileInputStream("bin/en-lemmatizer.dict");
             lemmatizer = new SimpleLemmatizer(is);
             is.close();
         }
-        String lemma = lemmatizer.lemmatize(word, this.getPOSTag(word));
-        return lemma;
+        for(int i=0;i<words.size();i++){
+            res.add(lemmatizer.lemmatize(words.get(i), PreProcessing.getPOSTag(words.get(i))));
+        }
+
+        return res;
     }
 
-    public static void main(String[] args) throws Exception{
+    public static List<String> lemmatize(String documentText)
+    {
+        List<String> lemmas = new LinkedList<String>();
+
+        // create an empty Annotation just with the given text
+        Annotation document = new Annotation(documentText);
+
+        // run all Annotators on this text
+
+        if(PreProcessing.pipeline==null){
+            Properties props;
+            props = new Properties();
+            props.put("annotators", "tokenize, ssplit, pos, lemma");
+
+            // StanfordCoreNLP loads a lot of models, so you probably
+            // only want to do this once per execution
+            PreProcessing.pipeline = new StanfordCoreNLP(props);
+        }
+        PreProcessing.pipeline.annotate(document);
+
+        // Iterate over all of the sentences found
+        List<CoreMap> sentences = document.get(CoreAnnotations.SentencesAnnotation.class);
+        for(CoreMap sentence: sentences) {
+            // Iterate over all tokens in a sentence
+            for (CoreLabel token: sentence.get(CoreAnnotations.TokensAnnotation.class)) {
+                // Retrieve and add the lemma for each word into the list of lemmas
+                lemmas.add(token.get(CoreAnnotations.LemmaAnnotation.class));
+            }
+        }
+
+        return lemmas;
+    }
+
+    public static void main7(String[] args) throws Exception{
         PreProcessing helper = new PreProcessing();
         SentimentAnalyzer an = new SentimentAnalyzer();
         File file = new File("data/ScoredData.tsv");
@@ -351,9 +395,9 @@ public class PreProcessing {
         List<String> tokens = this.tokenize(content.toLowerCase());
         List<String> stems =  new ArrayList<String>();
 
-        for(int i=0;i<tokens.size();i++){
-            stems.add(this.lemmatize(tokens.get(i)));
-        }
+
+            stems=this.lemmatize(tokens);
+
         String res="";
         List<String> features = this.removeStopWords(this.removeDuplicates(stems));
         for(int i=0;i<features.size();i++){
@@ -391,9 +435,12 @@ public class PreProcessing {
         return content;
     }
 
-    public static void main4(String[] args) throws Exception{
-        String test = "Alok K Alok alok alok Shukla";
-        System.out.print(PreProcessing.removeDuplicates(PreProcessing.tokenize(test)));
+    public static void main(String[] args) throws Exception{
+       List<String> test = new ArrayList<>();
+        test.add("cancel");
+        test.add("cancelling");
+        test.add("cancelled");
+        System.out.print(PreProcessing.lemmatize("cancel cancelling cancelled"));
     }
 
 //    private int getIndexOfFirstPunctuation(String content){
