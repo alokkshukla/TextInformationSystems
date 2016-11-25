@@ -1,0 +1,6 @@
+trainSize <- floor(0.80 * nrow(Data))
+set.seed(123)
+train_ind <- sample(seq_len(nrow(Data)), size = trainSize)
+
+Training <- Data[train_ind, ]
+Testing <- Data[-train_ind, ]

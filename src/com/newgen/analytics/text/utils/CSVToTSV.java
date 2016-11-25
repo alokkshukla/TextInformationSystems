@@ -18,7 +18,7 @@ public class CSVToTSV
     public static void main(String[] args)
     {
         CSVToTSV tester = new CSVToTSV();
-        tester.cleanUp("data/DataSet.csv", "data/DataSet");
+        tester.cleanUp("data/UnClassified.csv", "data/Additional");
     }
 
     public void cleanUp(String input, String output)
@@ -32,7 +32,7 @@ public class CSVToTSV
             File file = new File(output);
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
             br = new BufferedReader(new FileReader(csvFile));
-            while ((line = br.readLine()) != null)
+            while (((line = br.readLine()) != null))
             {
                 while (!line.contains("END")) {
                     line = line + br.readLine();
@@ -59,7 +59,7 @@ public class CSVToTSV
                     bw.write("\n");
                 }
             }
-            bw.close(); return;
+            bw.close(); 
         }
         catch (FileNotFoundException e)
         {

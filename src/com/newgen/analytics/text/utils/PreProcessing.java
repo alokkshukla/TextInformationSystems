@@ -21,14 +21,14 @@ import java.util.*;
 /**
  * Created by alok.shukla on 9/27/2016.
  */
-public class PreProcessing {
+public class PreProcessing implements Serializable{
     public PreProcessing() {
         lemmatizer=null;
         token_model=null;
         tokenizer=null;
         stemmer=null;
         pos_model=null;
-        stopwordsFile="keywords.txt";
+        stopwordsFile="lib/stop.txt";
 
 
     }
@@ -92,7 +92,7 @@ public class PreProcessing {
 
     public static List<String> tokenize(String content) throws Exception{
         if(null==token_model) {
-            InputStream is = new FileInputStream("bin/en-token.bin");
+            InputStream is = new FileInputStream("lib/en-token.bin");
 
             token_model = new TokenizerModel(is);
         }
@@ -136,7 +136,7 @@ public class PreProcessing {
 
         try {
 
-            br = new BufferedReader(new FileReader("bin/stop.txt"));
+            br = new BufferedReader(new FileReader("lib/stop.txt"));
             while ((line = br.readLine()) != null) {
               stopwords.add(line.toLowerCase());
             }
@@ -171,7 +171,7 @@ public class PreProcessing {
 
         try {
             if(pos_model == null) {
-                modelIn = new FileInputStream("bin/en-pos-maxent.bin");
+                modelIn = new FileInputStream("lib/en-pos-maxent.bin");
                 pos_model = new POSModel(modelIn);
             }
         }
@@ -196,7 +196,7 @@ public class PreProcessing {
 
         List<String> res = new ArrayList<>();
         if (lemmatizer == null) {
-            InputStream is = new FileInputStream("bin/en-lemmatizer.dict");
+            InputStream is = new FileInputStream("lib/en-lemmatizer.dict");
             lemmatizer = new SimpleLemmatizer(is);
             is.close();
         }
@@ -391,15 +391,9 @@ public class PreProcessing {
         bw2.close();
     }
 
-    public String preProcess(String content) throws Exception {
-        List<String> tokens = this.tokenize(content.toLowerCase());
-        List<String> stems =  new ArrayList<String>();
-
-
-            stems=this.lemmatize(tokens);
-
+    public static String preProcess(String content) throws Exception {
+        List<String> features = PreProcessing.removeStopWords(PreProcessing.tokenize(content.toLowerCase()));
         String res="";
-        List<String> features = this.removeStopWords(this.removeDuplicates(stems));
         for(int i=0;i<features.size();i++){
             res+=features.get(i);
            res+=" ";

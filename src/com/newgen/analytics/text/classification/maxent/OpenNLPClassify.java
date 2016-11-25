@@ -4,7 +4,14 @@ package com.newgen.analytics.text.classification.maxent;
  * Created by alok.shukla on 9/28/2016.
  */
 import java.io.*;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
+import com.newgen.analytics.text.classification.evaluation.ClassificationEvaluation;
+import com.newgen.analytics.text.classification.evaluation.ConfusionMatrix;
+import com.newgen.analytics.text.classification.naivebayes.NaiveBayesModel;
 import com.newgen.analytics.text.entities.Document;
 import opennlp.tools.doccat.*;
 import opennlp.tools.tokenize.Tokenizer;
@@ -18,69 +25,32 @@ import opennlp.tools.util.featuregen.BigramNameFeatureGenerator;
 
 public class OpenNLPClassify {
 
-    public static void main(String[] args) throws InvalidFormatException,
-            IOException {
+    public static void main(String[] args) throws Exception {
 
         OpenNLPClassify maxent = new OpenNLPClassify();
-        maxent.train();
+        String modelPath = maxent.trainModel("data/TrainData",5000,1,"model/MaxentComplete.ser");
+        String[] cat = {"COMPLAINT","COMPLIMENT","MISCELLANEOUS","REQUEST"};
+        ConfusionMatrix mat = maxent.testModel("data/TestData","model/MaxentComplete.ser","results/MaxentComplete.csv",cat);
+        //mat.print();
+        ClassificationEvaluation e = new ClassificationEvaluation();
+        System.out.println("Macro Precision:\t"+e.getEvaluationParameter(mat)[0]);
+        System.out.println("Micro Precision:\t"+e.getEvaluationParameter(mat)[1]);
 
-        File file = new File("results/MaxentResults17Nov.csv");
-
-
-        // if file doesnt exists, then create it
-        if (!file.exists()) file.createNewFile();
-
-        FileWriter fw = new FileWriter(file.getAbsoluteFile());
-        BufferedWriter bw = new BufferedWriter(fw);
-
-        bw.write("Expected,Predicted,Content\n");
-        String[] data = new String[2];
-        BufferedReader br = null;
-        String line;
-        try {
-
-            br = new BufferedReader(new FileReader("data/Test"));
-            while ((line = br.readLine()) != null) {
-                data = line.split("\t");
-                {
-
-                    if(data.length>1) {
-                        String tag = maxent.classify(data[1]);
-                        if(true){
-                            bw.write(data[0]+",");
-                            bw.write(tag+",");
-                            bw.write(data[1]+"\n");
-                        }
-
-                    }
-
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // System.out.print(data);
-        }
-//        new OpenNLPClassify().test(cat, content,"model/maxent.ser");
-        bw.close();
-        br.close();
     }
 
 
-    public static void main7(String[] args) throws Exception {
-        new OpenNLPClassify().test("","need a credit card","model/maxent.ser");
-    }
-    public void train() {
-        String onlpModelPath = "model/maxent.ser";
-        String trainingDataFilePath = "data/Train";
+
+
+    public String trainModel(String trainFilepath, int iter,int cutoff,String modelPath){
+        String onlpModelPath = modelPath;
+
         DoccatModel model = null;
         InputStream dataInputStream = null;
         OutputStream onlpModelOutput = null;
         try {
 
-
             // Read training data file
-            dataInputStream = new FileInputStream(trainingDataFilePath);
+            dataInputStream = new FileInputStream(trainFilepath);
             // Read each training instance
             ObjectStream<String> lineStream = new PlainTextByLineStream(
                     dataInputStream, "UTF-8");
@@ -88,11 +58,8 @@ public class OpenNLPClassify {
                     lineStream);
             // Calculate the training model
             TrainingParameters par = new TrainingParameters();
-            par.put("Cutoff","1");
-            par.put("Iterations","50000");
-//            FeatureGenerator feat = (FeatureGenerator) new BigramNameFeatureGenerator();
-//            TokenizerModel mod = new TokenizerModel();
-//            Tokenizer tok = new TokenizerME();
+            par.put("Cutoff",Integer.toString(cutoff));
+            par.put("Iterations",Integer.toString(iter));
             DoccatFactory doccatFactory = new DoccatFactory();
             model = DocumentCategorizerME.train("en", sampleStream, par, doccatFactory);
 
@@ -115,6 +82,7 @@ public class OpenNLPClassify {
             onlpModelOutput = new BufferedOutputStream(new FileOutputStream(
                     onlpModelPath));
             model.serialize(onlpModelOutput);
+            return onlpModelPath;
         } catch (IOException e) {
             System.err.println(e.getMessage());
         } finally {
@@ -126,15 +94,10 @@ public class OpenNLPClassify {
                 }
             }
         }
+       return null;
     }
-
-    /*
-     * Now we call the saved model and test it
-     * Give it a new text document and the expected category
-     */
-    public void test(String cat, String text, String path) throws InvalidFormatException,
-            IOException {
-        String classificationModelFilePath = path;
+    public ConfusionMatrix testModel(String testFilePath, String modelPath, String outoutFile, String[] labels) throws Exception {
+        String classificationModelFilePath = modelPath;
         InputStream is = new FileInputStream(classificationModelFilePath);
         DoccatModel classificationModel = new DoccatModel(is);
         DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel,
@@ -142,35 +105,119 @@ public class OpenNLPClassify {
                 new BagOfWordsFeatureGenerator());
         DocumentCategorizerEvaluator modelEvaluator = new DocumentCategorizerEvaluator(
                 classificationME);
-        String expectedDocumentCategory = cat;
-        String documentContent = text;
-        DocumentSample sample = new DocumentSample(expectedDocumentCategory,
-                documentContent);
-        double[] classDistribution = classificationME.categorize(documentContent);
-      String res = classificationME.getAllResults(classDistribution);
-        String predictedCategory = classificationME.getBestCategory(classDistribution);
-        modelEvaluator.evaluateSample(sample);
-        double result = modelEvaluator.getAccuracy();
-        System.out.println("Model prediction : " + predictedCategory);
-        System.out.println("All : " + res);
+
+
+
+        ConfusionMatrix results = new ConfusionMatrix(labels);
+        Map<String, Map<String, Integer>> confusionMatrix = results.getConfusionMatrix();
+        Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
+        File resfile = new File(outoutFile);
+
+
+        // if file doesnt exists, then create it
+        if (!resfile.exists()) {
+            resfile.createNewFile();
+        }
+        String line = "";
+        FileWriter fw = new FileWriter(resfile.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        BufferedReader br = null;
+        bw.write("Expected Category, Predicted Category,Content\n");
+        try {
+
+            br = new BufferedReader(new FileReader(testFilePath));
+            while ((line = br.readLine()) != null) {
+
+                String[] data = line.split("\t");
+
+                String expected = data[0];
+                double[] classDistribution = classificationME.categorize(data[1]);
+
+
+                String predicted = classificationME.getBestCategory(classDistribution);
+                bw.write(expected + ",");
+                bw.write(predicted + ",");
+                bw.write(data[1] + "\n");
+                if (confusionMatrix.get(predicted) != null) {
+                    Map<String, Integer> entries = confusionMatrix.get(predicted);
+                    if (entries.get(expected) != null) {
+                        entries.put(expected, entries.get(expected) + 1);
+                    } else {
+                        entries.put(expected, 1);
+                    }
+                } else {
+                    Map<String, Integer> entries = new HashMap<>();
+                    entries.put(expected, 1);
+                    confusionMatrix.put(predicted, entries);
+                }
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        bw.close();
+        br.close();
+        return results;
     }
 
-    public String classify(String text) throws InvalidFormatException,
-            IOException {
-        String classificationModelFilePath = "model/maxent.ser";
+
+
+
+	public String labelDataset(String additional, String modelPath, String tempPath, String[] cat) throws IOException {
+		// TODO Auto-generated method stub
+		String classificationModelFilePath = modelPath;
         InputStream is = new FileInputStream(classificationModelFilePath);
         DoccatModel classificationModel = new DoccatModel(is);
-        DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel);
+        DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel,
+                new NGramFeatureGenerator(),
+                new BagOfWordsFeatureGenerator());
         DocumentCategorizerEvaluator modelEvaluator = new DocumentCategorizerEvaluator(
                 classificationME);
 
-        String documentContent = text;
-        DocumentSample sample = new DocumentSample("DEFAULT",documentContent);
-        double[] classDistribution = classificationME.categorize(documentContent);
-        String predictedCategory = classificationME.getBestCategory(classDistribution);
-        modelEvaluator.evaluateSample(sample);
 
-        return predictedCategory;
 
-    }
+        
+        File resfile = new File(tempPath);
+
+
+        // if file doesnt exists, then create it
+        if (!resfile.exists()) {
+            resfile.createNewFile();
+        }
+        String line = "";
+        FileWriter fw = new FileWriter(resfile.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        BufferedReader br = null;
+        //bw.write("Expected Category, Predicted Category,Content\n");
+        try {
+
+            br = new BufferedReader(new FileReader(additional));
+            while ((line = br.readLine()) != null) {
+
+                String[] data = line.split("\t");
+
+           
+                double[] classDistribution = classificationME.categorize(data[1]);
+
+
+                String predicted = classificationME.getBestCategory(classDistribution);
+        
+                bw.write(predicted + "\t");
+                bw.write(data[1] + "\n");
+               
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+       bw.close();
+       
+		return tempPath;
+	}
+
+
+
+
 }

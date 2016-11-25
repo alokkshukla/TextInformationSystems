@@ -1,5 +1,6 @@
 package com.newgen.analytics.text.retrieval;
 
+import com.newgen.analytics.text.classification.evaluation.ConfusionMatrix;
 import com.newgen.analytics.text.classification.naivebayes.NaiveBayesModel;
 import com.newgen.analytics.text.entities.*;
 import com.newgen.analytics.text.utils.PreProcessing;
@@ -102,28 +103,7 @@ public class BM25 {
         bw.close();
     }
 
-    public static void main1(String[] args) throws Exception {
-        Document d1 = new Document();
-        d1.createDocument("Alok Kumar ALok", "");
 
-        Document d2 = new Document();
-        d2.createDocument("Shukla alok", "");
-
-        Corpus c = new Corpus();
-        c.addToCorpus(d1);
-        c.addToCorpus(d2);
-
-        Vocabulary v = new Vocabulary(c);
-
-//
-//        System.out.println(v.getVocab());
-
-        InvertedIndex idx = new InvertedIndex(c);
-        BM25 scorer = new BM25();
-        Document query = new Document();
-        query.createDocument("alok", "");
-        System.out.println(scorer.getBM25Score(idx, query, 25, 0.5));
-    }
 
     public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
         return map.entrySet()
@@ -138,49 +118,15 @@ public class BM25 {
     }
 
 
-    public static void main7(String[] args) throws Exception {
+    public InvertedIndex trainModel(String trainFilePath){
         Corpus c = new Corpus();
-        BM25 scorer = new BM25();
-        String[] data = new String[2];
-        BufferedReader br = null;
-        String line;
-        try {
 
-            br = new BufferedReader(new FileReader("data/Data.tsv"));
-            while ((line = br.readLine()) != null) {
-                data = line.split("\t");
-                {
-                    Document d = new Document();
-                    if (data.length > 1) {
-                        d.createDocument(data[1], "");
-                        d.setLabel(data[0]);
-                        c.addToCorpus(d);
-                    }
-
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // System.out.print(data);
-        }
-
-        //Vocabulary v = new Vocabulary(c);
-
-//        System.out.println(v.getVocab());
-        InvertedIndex idx = new InvertedIndex(c);
-        scorer.setTFIDF(idx);
-    }
-
-    public static void main(String[] args) throws Exception {
-        Corpus c = new Corpus();
-        BM25 scorer = new BM25();
         BufferedReader br = null;
         String[] data = new String[2];
         String line;
         try {
 
-            br = new BufferedReader(new FileReader("data/Train_"));
+            br = new BufferedReader(new FileReader(trainFilePath));
             while ((line = br.readLine()) != null) {
                 data = line.split("\t");
                 {
@@ -196,79 +142,77 @@ public class BM25 {
 
         }
 
-//        Vocabulary v = new Vocabulary();
-//        v.populateVocab(c);
-//        System.out.println(v.getVocab());
+
         InvertedIndex idx = new InvertedIndex(c);
+        return idx;
+    }
 
+    public ConfusionMatrix testModel(String testFilePath, InvertedIndex idx, String outoutFile, String[] labels) throws Exception {
 
-        File file = new File("results/ResulsBM25.csv");
+        ConfusionMatrix results = new ConfusionMatrix(labels);
+        Map<String, Map<String, Integer>> confusionMatrix = results.getConfusionMatrix();
 
+        File resfile = new File(outoutFile);
 
+        Corpus c = idx.getCorpus();
         // if file doesnt exists, then create it
-        if (!file.exists()) file.createNewFile();
-
-        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        if (!resfile.exists()) {
+            resfile.createNewFile();
+        }
+        String line = "";
+        FileWriter fw = new FileWriter(resfile.getAbsoluteFile());
         BufferedWriter bw = new BufferedWriter(fw);
-        bw.write("Expected Cat, Pred Cat, Content\n");
+        BufferedReader br = null;
+        bw.write("Expected Category, Predicted Category,Content\n");
         try {
 
-            br = new BufferedReader(new FileReader("data/Test"));
+            br = new BufferedReader(new FileReader(testFilePath));
             while ((line = br.readLine()) != null) {
-                data = line.split("\t");
-
-
+                String[] data = line.split("\t");
                 Document query = new Document();
                 query.createDocument(data[1], "");
                 query.setLabel(data[0]);
-
                 double b = 0.7;
-
-                Map<String, Integer> results = new HashMap<>();
-
-                int k = 300;
-
-                Iterator it = scorer.sortByValue(scorer.getBM25Score(idx, query, k, b)).entrySet().iterator();
-                int count = 0;
-//                bw.write(Integer.toString(k) + ",= K," + Double.toString(b) + ",= b," + "SEP\n");
-
+                int k = 5;
+                Iterator it = this.sortByValue(this.getBM25Score(idx, query, k, b)).entrySet().iterator();
                 Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
-
-                if(true) {
-                    bw.write(data[0] + "," + (String) entry.getKey() + "," + data[1] + "\n");
+                String expected = data[0];
+                Document d = c.getDocByID(entry.getKey());
+                String predicted = d.getLabel();
+                bw.write(expected + ",");
+                bw.write(predicted + ",");
+                bw.write(data[1] + "\n");
+                if (confusionMatrix.get(predicted) != null) {
+                    Map<String, Integer> entries = confusionMatrix.get(predicted);
+                    if (entries.get(expected) != null) {
+                        entries.put(expected, entries.get(expected) + 1);
+                    } else {
+                        entries.put(expected, 1);
+                    }
+                } else {
+                    Map<String, Integer> entries = new HashMap<>();
+                    entries.put(expected, 1);
+                    confusionMatrix.put(predicted, entries);
                 }
 
-//                while (count++ < 10) {
-//
-//
-//                    Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
-//                    Document d = c.getDocByID(entry.getKey());
-//
-//                    String cat = d.getLabel();
-//                    if (results.get(cat) != null) {
-//                        results.put(cat, results.get(cat) + 1);
-//                    } else {
-//                        results.put(cat, 1);
-//                    }
-//                }
-//
-//                Iterator i = scorer.sortByValue(results).entrySet().iterator();
-//                Map.Entry<String, Integer> e = (Map.Entry<String, Integer>) i.next();//i.next()
-//                if(!data[0].equalsIgnoreCase(e.getKey())) {
-//                    bw.write(data[0] + "," + (String) e.getKey() + "," + data[1] + "\n");
-//                }
             }
-
 
         } catch (Exception e) {
             e.printStackTrace();
         }
         bw.close();
         br.close();
+        return results;
     }
 
-//    public List<Double> optimise(InvertedIndex idx,String testFile){
-//
-//    }
+
+    public static void main(String[] args) throws Exception {
+        BM25 bm = new BM25();
+        InvertedIndex idx = bm.trainModel("data/Train");
+        String[] cat = {"COMPLAINT","COMPLIMENT","MISCELLANEOUS","REQUEST","SUGGESTION"};
+        ConfusionMatrix res = bm.testModel("data/Test",idx,"results/kNN.csv",cat);
+        System.out.println(res.getConfusionMatrix());
+    }
+
 
 }
