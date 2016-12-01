@@ -21,7 +21,7 @@ public class CoClassification {
 			// Init model
 			NaiveBayesModel helper = new NaiveBayesModel();
 			modelPath = helper.trainModel(trainFile,modelPath);
-			ConfusionMatrix mat = helper.testModel(testFile, modelPath, resFile, cat);
+			ConfusionMatrix mat = helper.testModel(testFile, modelPath, resFile);
 			ClassificationEvaluation eval = new ClassificationEvaluation();
 			double mi = eval.getEvaluationParameter(mat)[1];
 			double ma = eval.getEvaluationParameter(mat)[0];
@@ -32,7 +32,7 @@ public class CoClassification {
 			double threshold = 0.001;
 			while(Math.abs(diff)>threshold&&diff!=0){
 				// Predict unlabeled
-				String labelledFile = helper.labelDataset(additional, modelPath, "temp/TempLabels", cat);
+				String labelledFile = helper.labelDataset(additional, modelPath, "temp/TempLabels");
 
 				// Concatenate dataset
 				String updatedDataset = "temp/TempDataSet";
@@ -63,7 +63,7 @@ public class CoClassification {
 
 				// RebuildModel
 				modelPath = helper.trainModel(updatedDataset,modelPath);
-				mat = helper.testModel(testFile, modelPath, resFile, cat);
+				mat = helper.testModel(testFile, modelPath, resFile);
 				eval = new ClassificationEvaluation();
 
 				double newMa=eval.getEvaluationParameter(mat)[0];
@@ -82,7 +82,7 @@ public class CoClassification {
 			// Init model
 			OpenNLPClassify maxent = new OpenNLPClassify();
 			modelPath = maxent.trainModel(trainFile,500,1,modelPath);
-			ConfusionMatrix c = maxent.testModel(testFile, modelPath, resFile, cat);
+			ConfusionMatrix c = maxent.testModel(testFile, modelPath, resFile);
 			ClassificationEvaluation e = new ClassificationEvaluation();
 			double mip = e.getEvaluationParameter(c)[1];
 			double map = e.getEvaluationParameter(c)[0];
@@ -94,7 +94,7 @@ public class CoClassification {
 			double thres = 0.001;
 			while(Math.abs(difference)>thres&&difference!=0.0){
 				// Predict unlabeled
-				String labelledFile = maxent.labelDataset(additional, modelPath, "temp/TempMaxentLabels", cat);
+				String labelledFile = maxent.labelDataset(additional, modelPath, "temp/TempMaxentLabels");
 
 				// Concatenate dataset
 				String updatedDataset = "temp/TempMaxentDataSet";
@@ -125,7 +125,7 @@ public class CoClassification {
 
 				// RebuildModel
 				modelPath = maxent.trainModel(updatedDataset,500,1,modelPath);
-				mat = maxent.testModel(testFile, modelPath, resFile, cat);
+				mat = maxent.testModel(testFile, modelPath, resFile);
 				eval = new ClassificationEvaluation();
 				mat.print();
 				double newMa=eval.getEvaluationParameter(mat)[0];

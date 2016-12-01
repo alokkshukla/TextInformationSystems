@@ -6,13 +6,17 @@ package com.newgen.analytics.text.classification.maxent;
 import java.io.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import com.newgen.analytics.text.classification.evaluation.ClassificationEvaluation;
 import com.newgen.analytics.text.classification.evaluation.ConfusionMatrix;
 import com.newgen.analytics.text.classification.naivebayes.NaiveBayesModel;
 import com.newgen.analytics.text.entities.Document;
+import com.newgen.utils.MapUtils;
+
 import opennlp.tools.doccat.*;
 import opennlp.tools.tokenize.Tokenizer;
 import opennlp.tools.tokenize.TokenizerME;
@@ -24,13 +28,36 @@ import opennlp.tools.util.TrainingParameters;
 import opennlp.tools.util.featuregen.BigramNameFeatureGenerator;
 
 public class OpenNLPClassify {
+	private static final long serialVersionUID = 2L;
+	 private Set<String> labels = new HashSet<String>();
+
+	    public Set<String> getLabels() {
+			return labels;
+		}
+
+		public void setLabels(Set<String> labels) {
+			this.labels = labels;
+		}
+		String path;
+
+	    public String getPath() {
+			return path;
+		}
+
+		public void setPath(String path) {
+			this.path = path;
+		}
+
+		public static long getSerialversionuid() {
+			return serialVersionUID;
+		}
 
     public static void main(String[] args) throws Exception {
 
         OpenNLPClassify maxent = new OpenNLPClassify();
-        String modelPath = maxent.trainModel("data/TrainData",5000,1,"model/MaxentComplete.ser");
+        String modelPath = maxent.trainModel("data/TrainNew",5000,1,"model/MaxentLinux.ser");
         String[] cat = {"COMPLAINT","COMPLIMENT","MISCELLANEOUS","REQUEST"};
-        ConfusionMatrix mat = maxent.testModel("data/TestData","model/MaxentComplete.ser","results/MaxentComplete.csv",cat);
+        ConfusionMatrix mat = maxent.testModel("data/TestNew","model/MaxentLinux.ser","results/MaxentLinux.csv");
         //mat.print();
         ClassificationEvaluation e = new ClassificationEvaluation();
         System.out.println("Macro Precision:\t"+e.getEvaluationParameter(mat)[0]);
@@ -43,10 +70,28 @@ public class OpenNLPClassify {
 
     public String trainModel(String trainFilepath, int iter,int cutoff,String modelPath){
         String onlpModelPath = modelPath;
-
+this.setPath(modelPath);
         DoccatModel model = null;
         InputStream dataInputStream = null;
         OutputStream onlpModelOutput = null;
+        BufferedReader br = null;
+        String line;
+        try {
+
+            br = new BufferedReader(new FileReader(trainFilepath));
+            while ((line = br.readLine()) != null) {
+                String[] data = line.split("\t");
+                {
+                    if (data.length > 1) {
+                       
+                        this.labels.add(data[0]);
+                    }
+                }
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         try {
 
             // Read training data file
@@ -96,7 +141,7 @@ public class OpenNLPClassify {
         }
        return null;
     }
-    public ConfusionMatrix testModel(String testFilePath, String modelPath, String outoutFile, String[] labels) throws Exception {
+    public ConfusionMatrix testModel(String testFilePath, String modelPath, String outoutFile) throws Exception {
         String classificationModelFilePath = modelPath;
         InputStream is = new FileInputStream(classificationModelFilePath);
         DoccatModel classificationModel = new DoccatModel(is);
@@ -106,9 +151,9 @@ public class OpenNLPClassify {
         DocumentCategorizerEvaluator modelEvaluator = new DocumentCategorizerEvaluator(
                 classificationME);
 
+        String[] cats=this.labels.toArray(new String[this.labels.size()]); 
 
-
-        ConfusionMatrix results = new ConfusionMatrix(labels);
+        ConfusionMatrix results = new ConfusionMatrix(cats);
         Map<String, Map<String, Integer>> confusionMatrix = results.getConfusionMatrix();
         Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
         File resfile = new File(outoutFile);
@@ -135,6 +180,7 @@ public class OpenNLPClassify {
 
 
                 String predicted = classificationME.getBestCategory(classDistribution);
+                System.out.println(classificationME.getAllResults(classDistribution));
                 bw.write(expected + ",");
                 bw.write(predicted + ",");
                 bw.write(data[1] + "\n");
@@ -161,10 +207,26 @@ public class OpenNLPClassify {
         return results;
     }
 
+    public String getLabel(String content,String modelPath) throws Exception{
+    	
+    	String classificationModelFilePath = modelPath;
+        InputStream is = new FileInputStream(classificationModelFilePath);
+        DoccatModel classificationModel = new DoccatModel(is);
+        DocumentCategorizerME classificationME = new DocumentCategorizerME(classificationModel,
+                new NGramFeatureGenerator(),
+                new BagOfWordsFeatureGenerator());
+        DocumentCategorizerEvaluator modelEvaluator = new DocumentCategorizerEvaluator(
+                classificationME);
+        double[] classDistribution = classificationME.categorize(content);
+
+
+      
+  	return classificationME.getBestCategory(classDistribution);
+  }
 
 
 
-	public String labelDataset(String additional, String modelPath, String tempPath, String[] cat) throws IOException {
+	public String labelDataset(String additional, String modelPath, String tempPath) throws IOException {
 		// TODO Auto-generated method stub
 		String classificationModelFilePath = modelPath;
         InputStream is = new FileInputStream(classificationModelFilePath);
@@ -218,6 +280,9 @@ public class OpenNLPClassify {
 	}
 
 
-
+	public static void main7(String[] args) throws Exception{
+		OpenNLPClassify test = new OpenNLPClassify();
+		System.out.println(test.getLabel("Disgusted by your services","model/MaxentLinux.ser"));
+	}
 
 }

@@ -3,7 +3,9 @@ package com.newgen.analytics.text.classification.naivebayes;
 
 import com.newgen.analytics.text.classification.evaluation.ClassificationEvaluation;
 import com.newgen.analytics.text.classification.evaluation.ConfusionMatrix;
+import com.newgen.analytics.text.classification.svm.SVMClassify;
 import com.newgen.analytics.text.utils.PreProcessing;
+import com.newgen.utils.MapUtils;
 
 import java.io.*;
 import java.math.BigDecimal;
@@ -15,11 +17,34 @@ import java.util.stream.IntStream;
  * Created by alok.shukla on 9/30/2016.
  */
 public class NaiveBayesModel implements Serializable  {
+	private static final long serialVersionUID = 1L;
+	String path;
 
-    private Map<String, Map<String, Integer>> nbModel;
+    public String getPath() {
+		return path;
+	}
+
+	public void setPath(String path) {
+		this.path = path;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+
+	private Map<String, Map<String, Integer>> nbModel;
     private Map<String, Integer> catCounts;
+    private Set<String> labels = new HashSet<String>();
 
-    public Map<String, Integer> getCatDocCounts() {
+    public Set<String> getLabels() {
+		return labels;
+	}
+
+	public void setLabels(Set<String> labels) {
+		this.labels = labels;
+	}
+
+	public Map<String, Integer> getCatDocCounts() {
         return catDocCounts;
     }
 
@@ -201,6 +226,7 @@ public class NaiveBayesModel implements Serializable  {
 
     public String trainModel(String trainFilePath, String modelOut) {
         NaiveBayesModel model = new NaiveBayesModel();
+        model.setPath(modelOut);
         String onlpModelPath=modelOut;
         OutputStream onlpModelOutput = null;
         BufferedReader br = null;
@@ -213,6 +239,7 @@ public class NaiveBayesModel implements Serializable  {
                 {
                     if (data.length > 1) {
                         model.addToModel(data[1], data[0].trim());
+                        model.labels.add(data[0]);
                     }
                 }
 
@@ -270,10 +297,11 @@ public class NaiveBayesModel implements Serializable  {
         return totalProb.multiply(catProb);
     }
 
-    public ConfusionMatrix testModel(String testFilePath, String modelPath, String outoutFile, String[] labels) throws Exception {
+    public ConfusionMatrix testModel(String testFilePath, String modelPath, String outoutFile) throws Exception {
 
         NaiveBayesModel model = (NaiveBayesModel)this.deserialize(modelPath);
-        ConfusionMatrix results = new ConfusionMatrix(labels);
+        String[] cats=model.labels.toArray(new String[model.labels.size()]); 
+        ConfusionMatrix results = new ConfusionMatrix(cats);
         Map<String, Map<String, Integer>> confusionMatrix = results.getConfusionMatrix();
         Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
         File resfile = new File(outoutFile);
@@ -294,13 +322,18 @@ public class NaiveBayesModel implements Serializable  {
             while ((line = br.readLine()) != null) {
 
                 String[] data = line.split("\t");
-                for(int i=0;i<labels.length;i++){
-                	 scores.put(labels[i], model.getCategoryProbability(data[1], labels[i]));
+                for(int i=0;i<cats.length;i++){
+                	 scores.put(cats[i], model.getCategoryProbability(data[1], cats[i]));
                 }
                
 
-               
-                Iterator it = model.sortByValue(scores).entrySet().iterator();
+                Map<String, BigDecimal> map = scores;
+                		for (Map.Entry<String, BigDecimal> e : map.entrySet())
+                		{
+                		    System.out.print(e.getKey() + "\t" + ((BigDecimal)e.getValue()).toString()+"\t");
+                		}
+                		System.out.println();
+                Iterator it = MapUtils.sortByValue(scores).entrySet().iterator();
                 Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
                 String expected = data[0];
                 String predicted = entry.getKey();
@@ -328,6 +361,19 @@ public class NaiveBayesModel implements Serializable  {
         bw.close();
         br.close();
         return results;
+    }
+    
+    public String getLabel(String content,String modelPath) throws Exception{
+    	
+    	  Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
+    	NaiveBayesModel model = (NaiveBayesModel)this.deserialize(modelPath);
+    	String[] cats=model.labels.toArray(new String[model.labels.size()]); 
+    	for(int i=0;i<cats.length;i++){
+       	 scores.put(cats[i], model.getCategoryProbability(content, cats[i]));
+       }
+    	Iterator it = MapUtils.sortByValue(scores).entrySet().iterator();
+        Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
+    	return entry.getKey();
     }
 
     private void getMutualInfo(String featFile, int n) throws IOException {
@@ -370,18 +416,18 @@ public class NaiveBayesModel implements Serializable  {
     }
 
     public static void main(String[] args) throws Exception {
-        String trainFile = "data/TrainData";
-        String testFile = "data/TestData";
-        String resFile = "results/CompRes.CSV";
+        String trainFile = "data/TestNew";
+        String testFile = "data/TrainNew";
+        String resFile = "results/ResLinux.CSV";
 
 
         NaiveBayesModel helper = new NaiveBayesModel();
        
-        String modelPath = helper.trainModel(trainFile,"model/NBComp.ser");
+        String modelPath = helper.trainModel(trainFile,"model/NBLinux.ser");
         String[] cat = {"COMPLAINT","COMPLIMENT","MISCELLANEOUS","REQUEST"};
 
 
-        ConfusionMatrix mat = helper.testModel(testFile,modelPath,resFile,cat);
+        ConfusionMatrix mat = helper.testModel(testFile,modelPath,resFile);
         mat.print();
         ClassificationEvaluation e = new ClassificationEvaluation();
         System.out.println("Macro Precision:\t"+e.getEvaluationParameter(mat)[0]);
@@ -391,17 +437,7 @@ public class NaiveBayesModel implements Serializable  {
 
 
 
-    public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-        return map.entrySet()
-                .stream()
-                .sorted(Map.Entry.comparingByValue(Collections.reverseOrder()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue,
-                        (e1, e2) -> e1,
-                        LinkedHashMap::new
-                ));
-    }
+   
 
     /**
      * deserialize to Object from given file. We use the general Object so as
@@ -429,13 +465,13 @@ public class NaiveBayesModel implements Serializable  {
         oos.close();
     }
     
-    public String labelDataset(String testFilePath, String modelPath, String outputFile,String[] cat) throws ClassNotFoundException, IOException{
+    public String labelDataset(String testFilePath, String modelPath, String outputFile) throws ClassNotFoundException, IOException{
     	 NaiveBayesModel model = (NaiveBayesModel)this.deserialize(modelPath);
          
         
          Map<String, BigDecimal> scores = new HashMap<String, BigDecimal>();
          File resfile = new File(outputFile);
-
+         String[] cat=this.labels.toArray(new String[this.labels.size()]); 
 
          // if file doesnt exists, then create it
          if (!resfile.exists()) {
@@ -456,7 +492,7 @@ public class NaiveBayesModel implements Serializable  {
                 	 scores.put(cat[i], model.getCategoryProbability(data[1], cat[i]));
                  }
                  
-                 Iterator it = model.sortByValue(scores).entrySet().iterator();
+                 Iterator it = MapUtils.sortByValue(scores).entrySet().iterator();
                  Map.Entry<String, BigDecimal> entry = (Map.Entry<String, BigDecimal>) it.next();
                  String expected = data[0];
                  String predicted = entry.getKey();
@@ -503,14 +539,14 @@ public class NaiveBayesModel implements Serializable  {
 
                 scores1.put("NO", model1.getCategoryProbability(data[1], "NO"));
                 
-                Iterator it1 = model1.sortByValue(scores1).entrySet().iterator();
+                Iterator it1 = MapUtils.sortByValue(scores1).entrySet().iterator();
                 Map.Entry<String, BigDecimal> entry1 = (Map.Entry<String, BigDecimal>) it1.next();
                 
                 scores2.put("YES", model2.getCategoryProbability(data[1], "YES"));
 
                 scores2.put("NO", model2.getCategoryProbability(data[1], "NO"));
                 
-                Iterator it2 = model2.sortByValue(scores2).entrySet().iterator();
+                Iterator it2 = MapUtils.sortByValue(scores2).entrySet().iterator();
                 Map.Entry<String, BigDecimal> entry2 = (Map.Entry<String, BigDecimal>) it2.next();
                 String expected = data[0];
                 String predicted = "NO";
@@ -532,5 +568,10 @@ public class NaiveBayesModel implements Serializable  {
         br.close();
        
     }
+    
+    public static void main5(String[] args) throws Exception{
+		NaiveBayesModel test = new NaiveBayesModel();
+		System.out.println(test.getLabel("Disgusted by your services","model/NBLinux.ser"));
+	}
 
 }
